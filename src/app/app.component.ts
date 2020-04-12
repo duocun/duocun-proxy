@@ -1,7 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from './auth.service';
 import { LogService } from './log.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 const AppCode = {
   FOOD_DELIVERY: '122',
@@ -12,9 +14,11 @@ const AppCode = {
   templateUrl: './app.component.html',
   styleUrls: [] // './app.component.css'
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   title = 'duocun-proxy';
   hasCode = true;
+  onDestroy$ = new Subject();
+
   constructor(
     private route: ActivatedRoute,
     private authSvc: AuthService,
@@ -37,20 +41,25 @@ export class AppComponent implements OnInit {
     // });
   }
 
+  ngOnDestroy() {
+    this.onDestroy$.next();
+    this.onDestroy$.complete();
+  }
+
   ngOnInit() {
     this.route.queryParamMap.subscribe(queryParams => {
       const code = queryParams.get('code');
       const appCode = queryParams.get('state');
       if (appCode) {
-        this.authSvc.getAccount().then((account: any) => {
-          if (account) {
-            const tokenId = this.authSvc.getAccessTokenId();
-            // const data = {msg: 'default login by ' + account.username + ', appCode: ' + appCode + ', tokenId:' + tokenId};
-            // this.logSvc.save(data).then(() => {
-            this.redirectApp(appCode, tokenId);
-            // });
-          } else {
-            this.authSvc.wxLogin(code).then((r: any) => {
+        // this.authSvc.getAccount().pipe(takeUntil(this.onDestroy$)).subscribe((account: any) => {
+        //   if (account) {
+        //     const tokenId = this.authSvc.getAccessTokenId();
+        //     // const data = {msg: 'default login by ' + account.username + ', appCode: ' + appCode + ', tokenId:' + tokenId};
+        //     // this.logSvc.save(data).then(() => {
+        //     this.redirectApp(appCode, tokenId);
+        //     // });
+        //   } else {
+            this.authSvc.wxLogin(code).pipe(takeUntil(this.onDestroy$)).subscribe((r: any) => {
               // const data = {msg: 'wxLogin with code:' + code + ', appCode: ' + appCode + ', tokenId:' + r.tokenId};
               // this.logSvc.save(data).then(() => {
               if (r) {
@@ -58,13 +67,15 @@ export class AppComponent implements OnInit {
                 this.authSvc.setAccessTokenId(tokenId);
                 this.redirectApp(appCode, tokenId);
               } else {
-                window.location.href = 'https://duocun.ca';
+                alert('微信登陆失败, 请退出重新尝试'); // to do
+                // window.location.href = 'https://duocun.ca';
               }
               // });
             });
-          }
-        });
+        //   }
+        // });
       } else {
+        alert('微信登陆失败, 请退出重新尝试');
         this.hasCode = false;
       }
     });

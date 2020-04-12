@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import * as Cookies from 'js-cookie';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { throwError as observableThrowError, of } from 'rxjs';
 
 import { environment } from '../environments/environment';
 const COOKIE_EXPIRY_DAYS = 3;
@@ -29,14 +30,14 @@ export class AuthService {
   getAccount() {
     const tokenId: string = this.getAccessTokenId();
     if (tokenId) {
-      return this.http.get(this.url + '/current?tokenId=' + tokenId).toPromise();
+      return this.http.get(this.url + '/current?tokenId=' + tokenId);
     } else {
-      return new Promise((resolve) => { resolve(); });
+      return of(null);
     }
   }
 
   wxLogin(authCode) {
     const url = this.url + '/wxLogin?code=' + authCode;
-    return this.http.get(url).toPromise();
+    return this.http.get(url);
   }
 }
