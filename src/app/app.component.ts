@@ -64,7 +64,7 @@ export class AppComponent implements OnInit, OnDestroy {
               // this.logSvc.save(data).then(() => {
               if (r) {
                 const tokenId = r.tokenId;
-                this.authSvc.setAccessTokenId(tokenId);
+                // this.authSvc.setAccessTokenId(tokenId);
                 this.redirectApp(appCode, tokenId);
               } else {
                 alert('微信登陆失败, 请退出重新尝试'); // to do
