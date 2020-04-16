@@ -17,15 +17,31 @@ export class AuthService {
 
   }
 
-  setWxCode(code: string) {
-    if (code) {
-      Cookies.set('duocun-wx-code', code, { expires: COOKIE_EXPIRY_DAYS });
+  // max size 10
+  quequeWxCode(code: string) {
+    const jsonStr = Cookies.get('duocun-wx-codes');
+    const codes = jsonStr ? JSON.parse(jsonStr) : [];
+    if (codes && codes.length === 10) {
+      codes.shift();
+      codes.push(code);
+      const r = JSON.stringify(codes);
+      Cookies.set('duocun-wx-codes', r, { expires: COOKIE_EXPIRY_DAYS });
+    } else {
+      const found = codes.find(c => c === code);
+      if (!found) {
+        codes.push(code);
+        const r = JSON.stringify(codes);
+        Cookies.set('duocun-wx-codes', r, { expires: COOKIE_EXPIRY_DAYS });
+      }
     }
   }
 
-  getWxCode(): string {
-    const code = Cookies.get('duocun-wx-code');
-    return code ? code : null;
+
+  findWxCode(code): string {
+    const jsonStr = Cookies.get('duocun-wx-codes');
+    const codes = jsonStr ? JSON.parse(jsonStr) : [];
+    const found = codes.find(c => c === code);
+    return found ? found : null;
   }
 
   setAccessTokenId(token: string) {
