@@ -60,41 +60,38 @@ export class AppComponent implements OnInit, OnDestroy {
         // process wx 40163 issue
         const cachedCode = this.authSvc.findWxCode(code);
 
+        // if the code is already used within 5 min
         if (cachedCode === code) {
-          const data = {type: 'wxlogin', msg: 'login with duplicated code:' + code + ', appCode: ' + appCode};
-          this.logSvc.save(data).then(() => {});
-          return;
-        } else {
-          this.authSvc.quequeWxCode(code);
-        }
-
-        if (appCode) {
-          // this.authSvc.getAccount().pipe(takeUntil(this.onDestroy$)).subscribe((account: any) => {
-          //   if (account) {
-          //     const tokenId = this.authSvc.getAccessTokenId();
-          //     // const data = {msg: 'default login by ' + account.username + ', appCode: ' + appCode + ', tokenId:' + tokenId};
-          //     // this.logSvc.save(data).then(() => {
-          //     this.redirectApp(appCode, tokenId);
-          //     // });
-          //   } else {
-          this.authSvc.wxLogin(code).pipe(takeUntil(this.onDestroy$)).subscribe((r: any) => {
-            // const data = {msg: 'wxLogin with code:' + code + ', appCode: ' + appCode + ', tokenId:' + r.tokenId};
-            // this.logSvc.save(data).then(() => {
-            if (r && r.tokenId) {
-              const tokenId = r.tokenId;
-              // this.authSvc.setAccessTokenId(tokenId);
+          const data = { type: 'wxlogin', msg: 'login with duplicated code:' + code + ', appCode: ' + appCode };
+          this.logSvc.save(data).then(() => { });
+          this.authSvc.getAccount().pipe(takeUntil(this.onDestroy$)).subscribe((account: any) => {
+            if (account) {
+              const tokenId = this.authSvc.getAccessTokenId();
               this.redirectApp(appCode, tokenId);
             } else {
-              alert('微信登陆失败, 请退出重新尝试'); // to do
-              // window.location.href = 'https://duocun.ca';
+              return;
             }
-            // });
           });
-          //   }
-          // });
         } else {
-          alert('微信登陆失败, 请退出重新尝试');
-          this.hasCode = false;
+          this.authSvc.quequeWxCode(code);
+          if (appCode) {
+            this.authSvc.wxLogin(code).pipe(takeUntil(this.onDestroy$)).subscribe((r: any) => {
+              // const data = {msg: 'wxLogin with code:' + code + ', appCode: ' + appCode + ', tokenId:' + r.tokenId};
+              // this.logSvc.save(data).then(() => {
+              if (r && r.tokenId) {
+                const tokenId = r.tokenId;
+                this.authSvc.setAccessTokenId(tokenId);
+                this.redirectApp(appCode, tokenId);
+              } else {
+                alert('微信登陆失败, 请退出重新尝试'); // to do
+                // window.location.href = 'https://duocun.ca';
+              }
+              // });
+            });
+          } else {
+            alert('微信登陆失败, 请退出重新尝试');
+            this.hasCode = false;
+          }
         }
       });
   }
