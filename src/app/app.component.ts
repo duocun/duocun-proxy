@@ -58,16 +58,14 @@ export class AppComponent implements OnInit, OnDestroy {
         const appCode = queryParams.get('state');
 
         // process wx 40163 issue
-        const cachedCode = this.authSvc.getWxCode();
+        const cachedCode = this.authSvc.findWxCode(code);
 
         if (cachedCode === code) {
           const data = {type: 'wxlogin', msg: 'login with duplicated code:' + code + ', appCode: ' + appCode};
-          this.logSvc.save(data).then(() => {
-
-          });
+          this.logSvc.save(data).then(() => {});
           return;
         } else {
-          this.authSvc.setWxCode(code);
+          this.authSvc.quequeWxCode(code);
         }
 
         if (appCode) {

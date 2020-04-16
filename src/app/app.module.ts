@@ -21,7 +21,9 @@ const routes = [
     HttpClientModule,
     RouterModule.forRoot(routes)
   ],
-  providers: [AuthService, LogService],
+  providers: [
+    AuthService,
+    LogService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
