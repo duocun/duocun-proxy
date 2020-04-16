@@ -3,7 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { AuthService } from './auth.service';
 import { LogService } from './log.service';
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { takeUntil, skip, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 const AppCode = {
   FOOD_DELIVERY: '122',
@@ -47,37 +47,57 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.route.queryParamMap.subscribe(queryParams => {
-      const code = queryParams.get('code');
-      const appCode = queryParams.get('state');
-      if (appCode) {
-        // this.authSvc.getAccount().pipe(takeUntil(this.onDestroy$)).subscribe((account: any) => {
-        //   if (account) {
-        //     const tokenId = this.authSvc.getAccessTokenId();
-        //     // const data = {msg: 'default login by ' + account.username + ', appCode: ' + appCode + ', tokenId:' + tokenId};
-        //     // this.logSvc.save(data).then(() => {
-        //     this.redirectApp(appCode, tokenId);
-        //     // });
-        //   } else {
-            this.authSvc.wxLogin(code).pipe(takeUntil(this.onDestroy$)).subscribe((r: any) => {
-              // const data = {msg: 'wxLogin with code:' + code + ', appCode: ' + appCode + ', tokenId:' + r.tokenId};
-              // this.logSvc.save(data).then(() => {
-              if (r) {
-                const tokenId = r.tokenId;
-                // this.authSvc.setAccessTokenId(tokenId);
-                this.redirectApp(appCode, tokenId);
-              } else {
-                alert('微信登陆失败, 请退出重新尝试'); // to do
-                // window.location.href = 'https://duocun.ca';
-              }
-              // });
-            });
-        //   }
-        // });
-      } else {
-        alert('微信登陆失败, 请退出重新尝试');
-        this.hasCode = false;
-      }
-    });
+    this.route.queryParamMap.pipe(
+      skip(1),
+      debounceTime(100),
+      distinctUntilChanged(),
+      takeUntil(this.onDestroy$)
+    )
+      .subscribe(queryParams => {
+        const code = queryParams.get('code');
+        const appCode = queryParams.get('state');
+
+        // process wx 40163 issue
+        const cachedCode = this.authSvc.getWxCode();
+
+        if (cachedCode === code) {
+          const data = {type: 'wxlogin', msg: 'login with duplicated code:' + code + ', appCode: ' + appCode};
+          this.logSvc.save(data).then(() => {
+
+          });
+          return;
+        } else {
+          this.authSvc.setWxCode(code);
+        }
+
+        if (appCode) {
+          // this.authSvc.getAccount().pipe(takeUntil(this.onDestroy$)).subscribe((account: any) => {
+          //   if (account) {
+          //     const tokenId = this.authSvc.getAccessTokenId();
+          //     // const data = {msg: 'default login by ' + account.username + ', appCode: ' + appCode + ', tokenId:' + tokenId};
+          //     // this.logSvc.save(data).then(() => {
+          //     this.redirectApp(appCode, tokenId);
+          //     // });
+          //   } else {
+          this.authSvc.wxLogin(code).pipe(takeUntil(this.onDestroy$)).subscribe((r: any) => {
+            // const data = {msg: 'wxLogin with code:' + code + ', appCode: ' + appCode + ', tokenId:' + r.tokenId};
+            // this.logSvc.save(data).then(() => {
+            if (r && r.tokenId) {
+              const tokenId = r.tokenId;
+              // this.authSvc.setAccessTokenId(tokenId);
+              this.redirectApp(appCode, tokenId);
+            } else {
+              alert('微信登陆失败, 请退出重新尝试'); // to do
+              // window.location.href = 'https://duocun.ca';
+            }
+            // });
+          });
+          //   }
+          // });
+        } else {
+          alert('微信登陆失败, 请退出重新尝试');
+          this.hasCode = false;
+        }
+      });
   }
 }

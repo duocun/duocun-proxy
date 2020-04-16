@@ -16,6 +16,18 @@ export class AuthService {
   ) {
 
   }
+
+  setWxCode(code: string) {
+    if (code) {
+      Cookies.set('duocun-wx-code', code, { expires: COOKIE_EXPIRY_DAYS });
+    }
+  }
+
+  getWxCode(): string {
+    const code = Cookies.get('duocun-wx-code');
+    return code ? code : null;
+  }
+
   setAccessTokenId(token: string) {
     if (token) {
       Cookies.set('duocun-token-id', token, { expires: COOKIE_EXPIRY_DAYS });
