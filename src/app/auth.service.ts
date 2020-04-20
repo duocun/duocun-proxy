@@ -44,6 +44,30 @@ export class AuthService {
     return found ? found : null;
   }
 
+  setWechatOpenId(accessToken: string, openId: string, expiresIn: string) {
+    if (accessToken && openId && expiresIn) {
+      const seconds = (+expiresIn);
+      const time = new Date().getTime() + seconds * 1000;
+      const r = JSON.stringify({ accessToken, openId, time });
+      Cookies.set('duocun-wechat-openid', r);
+    }
+  }
+
+  getWechatOpenId(): any {
+    const jsonStr = Cookies.get('duocun-wechat-openid');
+    const r = jsonStr ? JSON.parse(jsonStr) : [];
+    const expiry = new Date().setTime(+(r.time));
+    const accessToken = r.accessToken;
+    const openId = r.openId;
+    const now = new Date().getTime();
+    if (accessToken && openId && (now < expiry)) {
+      return { accessToken, openId };
+    } else {
+      return {accessToken: null, openId: null};
+    }
+  }
+
+
   setAccessTokenId(token: string) {
     if (token) {
       Cookies.set('duocun-token-id', token, { expires: COOKIE_EXPIRY_DAYS });
@@ -71,7 +95,7 @@ export class AuthService {
 
   wechatLoginByOpenId(accessToken, openId) {
     const url = this.url + '/wechatLoginByOpenId';
-    return this.http.post(url, {accessToken, openId});
+    return this.http.post(url, { accessToken, openId });
   }
 
 }
