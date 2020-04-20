@@ -49,50 +49,44 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.route.queryParamMap.pipe(
       skip(1),
-      debounceTime(100),
+      debounceTime(1),
       distinctUntilChanged(),
       takeUntil(this.onDestroy$)
-    )
-      .subscribe(queryParams => {
-        const code = queryParams.get('code');
-        const appCode = queryParams.get('state');
+    ).subscribe(queryParams => {
+      const code = queryParams.get('code');
+      const appCode = queryParams.get('state');
 
-        // process wx 40163 issue
-        const cachedCode = this.authSvc.findWxCode(code);
-
-        // if the code is already used within 5 min
-        if (cachedCode === code) {
-          // const data = { type: 'wxlogin', msg: 'login with duplicated code:' + code + ', appCode: ' + appCode };
-          // this.logSvc.save(data).then(() => { });
-          this.authSvc.getAccount().pipe(takeUntil(this.onDestroy$)).subscribe((account: any) => {
-            if (account) {
-              const tokenId = this.authSvc.getAccessTokenId();
-              this.redirectApp(appCode, tokenId);
-            }
-          });
-          // return;
-        } else {
-          this.authSvc.quequeWxCode(code);
-          if (appCode) {
-            this.authSvc.wechatLoginByCode(code).pipe(takeUntil(this.onDestroy$)).subscribe((r: any) => {
-              // const data = {msg: 'wxLogin with code:' + code + ', appCode: ' + appCode + ', tokenId:' + r.tokenId};
-              // this.logSvc.save(data).then(() => {
-              if (r && r.tokenId) {
-                const tokenId = r.tokenId;
-                this.authSvc.setAccessTokenId(tokenId);
-                this.redirectApp(appCode, tokenId);
-              } else {
-                alert('微信登陆失败, 请退出重新尝试'); // to do
-                // window.location.href = 'https://duocun.ca';
-              }
-              // });
-            });
-          } else {
-            alert('微信登陆失败, 请退出重新尝试');
-            this.hasCode = false;
+      // process wx 40163 issue
+      const { accessToken, openId } = this.authSvc.getWechatOpenId();
+      if (accessToken && openId) {
+        this.authSvc.wechatLoginByOpenId(accessToken, openId).pipe(takeUntil(this.onDestroy$)).subscribe((r: any) => {
+          if (r && r.tokenId) {
+            this.authSvc.setAccessTokenId(r.tokenId);
+            this.redirectApp(appCode, r.tokenId);
+          } else { // accessToken expiry
+            this.wechatLoginByCode(appCode, code);
           }
+        });
+      } else {
+        this.wechatLoginByCode(appCode, code);
+      }
+    });
+  }
+
+  wechatLoginByCode(appCode, code) {
+    if (appCode && code) {
+      this.authSvc.wechatLoginByCode(code).pipe(takeUntil(this.onDestroy$)).subscribe((r: any) => {
+        // const data = {msg: 'wxLogin with code:' + code + ', appCode: ' + appCode + ', tokenId:' + r.tokenId};
+        // this.logSvc.save(data).then(() => {
+        if (r && r.tokenId) {
+          this.authSvc.setWechatOpenId(r.accessToken, r.openId, r.expiresIn);
+          this.authSvc.setAccessTokenId(r.tokenId);
+          this.redirectApp(appCode, r.tokenId);
+        } else {
+          alert('微信登陆失败, 请退出重新尝试');
         }
       });
+    }
   }
 
 }
