@@ -64,8 +64,14 @@ export class AuthService {
     }
   }
 
-  wxLogin(authCode) {
-    const url = this.url + '/wxLogin?code=' + authCode;
+  wechatLoginByCode(authCode) {
+    const url = this.url + '/wechatLoginByCode?code=' + authCode;
     return this.http.get(url);
   }
+
+  wechatLoginByOpenId(accessToken, openId) {
+    const url = this.url + '/wechatLoginByOpenId';
+    return this.http.post(url, {accessToken, openId});
+  }
+
 }

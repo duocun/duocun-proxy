@@ -62,20 +62,19 @@ export class AppComponent implements OnInit, OnDestroy {
 
         // if the code is already used within 5 min
         if (cachedCode === code) {
-          const data = { type: 'wxlogin', msg: 'login with duplicated code:' + code + ', appCode: ' + appCode };
-          this.logSvc.save(data).then(() => { });
+          // const data = { type: 'wxlogin', msg: 'login with duplicated code:' + code + ', appCode: ' + appCode };
+          // this.logSvc.save(data).then(() => { });
           this.authSvc.getAccount().pipe(takeUntil(this.onDestroy$)).subscribe((account: any) => {
             if (account) {
               const tokenId = this.authSvc.getAccessTokenId();
               this.redirectApp(appCode, tokenId);
-            } else {
-              return;
             }
           });
+          // return;
         } else {
           this.authSvc.quequeWxCode(code);
           if (appCode) {
-            this.authSvc.wxLogin(code).pipe(takeUntil(this.onDestroy$)).subscribe((r: any) => {
+            this.authSvc.wechatLoginByCode(code).pipe(takeUntil(this.onDestroy$)).subscribe((r: any) => {
               // const data = {msg: 'wxLogin with code:' + code + ', appCode: ' + appCode + ', tokenId:' + r.tokenId};
               // this.logSvc.save(data).then(() => {
               if (r && r.tokenId) {
@@ -95,4 +94,5 @@ export class AppComponent implements OnInit, OnDestroy {
         }
       });
   }
+
 }
