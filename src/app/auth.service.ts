@@ -47,26 +47,29 @@ export class AuthService {
   setWechatOpenId(accessToken: string, openId: string, expiresIn: string) {
     if (accessToken && openId && expiresIn) {
       const seconds = (+expiresIn);
-      const time = new Date().getTime() + seconds * 1000;
-      const r = JSON.stringify({ accessToken, openId, time });
-      Cookies.set('duocun-wechat-openid', r);
+      const t = new Date().getTime() + seconds * 1000;
+      Cookies.set('duocun-wx-token', accessToken);
+      Cookies.set('duocun-wx-openid', openId);
+      Cookies.set('duocun-wx-expiry', t);
     }
   }
 
   getWechatOpenId(): any {
-    const jsonStr = Cookies.get('duocun-wechat-openid');
-    const r = jsonStr ? JSON.parse(jsonStr) : [];
-    const expiry = new Date().setTime(+(r.time));
-    const accessToken = r.accessToken;
-    const openId = r.openId;
-    const now = new Date().getTime();
-    if (accessToken && openId && (now < expiry)) {
-      return { accessToken, openId };
+    const accessToken = Cookies.get('duocun-wx-token');
+    const openId = Cookies.get('duocun-wx-openid');
+    const t = Cookies.get('duocun-wx-expiry');
+    if (t && accessToken && openId) {
+      const expiry = new Date().setTime(+(t));
+      const now = new Date().getTime();
+      if (accessToken && openId && (now < expiry)) {
+        return { accessToken, openId };
+      } else {
+        return { accessToken: null, openId: null };
+      }
     } else {
-      return {accessToken: null, openId: null};
+      return { accessToken: null, openId: null };
     }
   }
-
 
   setAccessTokenId(token: string) {
     if (token) {
