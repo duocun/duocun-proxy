@@ -3,7 +3,7 @@ import * as Cookies from 'js-cookie';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { throwError as observableThrowError, of } from 'rxjs';
 
-import { environment } from '../environments/environment';
+import { environment } from '../../environments/environment';
 const COOKIE_EXPIRY_DAYS = 3;
 
 @Injectable({

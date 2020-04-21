@@ -1,20 +1,25 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
+import { RouterModule } from '@angular/router';
+import { HttpClientModule } from '@angular/common/http';
 
 import { AppComponent } from './app.component';
-import { AuthService } from './auth.service';
-import { HttpClientModule } from '@angular/common/http';
+import { AuthService } from './auth/auth.service';
 import { LogService } from './log.service';
-import { RouterModule } from '@angular/router';
+import { AuthComponent } from './auth/auth.component';
+
 const routes = [
-  {
-      path: '**',
-      component: AppComponent,
-  }
+  { path: '', redirectTo: 'proxy', pathMatch: 'full' },
+  { path: 'proxy', component: AuthComponent}
+  // {
+  //     path: '**',
+  //     component: AppComponent,
+  // }
 ];
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    AuthComponent
   ],
   imports: [
     BrowserModule,
@@ -23,7 +28,8 @@ const routes = [
   ],
   providers: [
     AuthService,
-    LogService],
+    LogService
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
