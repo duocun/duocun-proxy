@@ -4,12 +4,7 @@ import { AuthService } from './auth.service';
 import { LogService } from '../log.service';
 import { Subject } from 'rxjs';
 
-import {
-  takeUntil,
-  skip,
-  debounceTime,
-  distinctUntilChanged,
-} from 'rxjs/operators';
+import {takeUntil} from 'rxjs/operators';
 
 // import { factory } from './log4j';
 // const log = factory.getLogger('model.AppComponent');
@@ -64,9 +59,6 @@ export class AuthComponent implements OnInit, OnDestroy {
     // log.debug(`ngOnInit called ....`);
     this.route.queryParamMap
       .pipe(
-        // skip(1),
-        // debounceTime(1),
-        // distinctUntilChanged(),
         takeUntil(this.onDestroy$)
       )
       .subscribe((queryParams) => {
@@ -85,7 +77,6 @@ export class AuthComponent implements OnInit, OnDestroy {
                 this.redirectApp(appCode, r.tokenId);
               } else {
                 // accessToken expiry
-                // this.wechatLoginByCode(appCode, code);
                 alert('微信登陆失败，请退出公众号重新尝试');
                 return;
               }
