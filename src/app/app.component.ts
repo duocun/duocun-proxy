@@ -46,6 +46,9 @@ export class AppComponent implements OnInit, OnDestroy {
     this.onDestroy$.complete();
   }
 
+  // duocun-proxy domain is localhost:5005   the router url could be call multiple times
+  // dev:        http://localhost:5005/?code=071uZnPi1xT97t0OFnTi12xDPi1uZnPK&state=123
+  // production: http://duocun.com.cn/?code=071uZnPi1xT97t0OFnTi12xDPi1uZnPK&state=123
   ngOnInit() {
     this.route.queryParamMap.pipe(
       skip(1),
@@ -54,7 +57,7 @@ export class AppComponent implements OnInit, OnDestroy {
       takeUntil(this.onDestroy$)
     ).subscribe(queryParams => {
       const code = queryParams.get('code');
-      const appCode = queryParams.get('state');
+      const appCode = queryParams.get('state'); // no use at all
 
       // process wx 40163 issue
       const { accessToken, openId } = this.authSvc.getWechatOpenId();
@@ -64,10 +67,12 @@ export class AppComponent implements OnInit, OnDestroy {
             this.authSvc.setAccessTokenId(r.tokenId);
             this.redirectApp(appCode, r.tokenId);
           } else { // accessToken expiry
-            this.wechatLoginByCode(appCode, code);
+            // this.wechatLoginByCode(appCode, code);
+            alert('微信登陆失败，请退出公众号重新尝试');
+            return;
           }
         });
-      } else {
+      } else { // if accessToken expired
         this.wechatLoginByCode(appCode, code);
       }
     });
@@ -79,9 +84,9 @@ export class AppComponent implements OnInit, OnDestroy {
         // const data = {msg: 'wxLogin with code:' + code + ', appCode: ' + appCode + ', tokenId:' + r.tokenId};
         // this.logSvc.save(data).then(() => {
         if (r && r.tokenId) {
-          this.authSvc.setWechatOpenId(r.accessToken, r.openId, r.expiresIn);
-          this.authSvc.setAccessTokenId(r.tokenId);
-          this.redirectApp(appCode, r.tokenId);
+          // this.authSvc.setWechatOpenId(r.accessToken, r.openId, r.expiresIn);
+          this.authSvc.setAccessTokenId(r.tokenId); // duocun jwt token
+          this.redirectApp(appCode, r.tokenId);     // duocun jwt token
         } else {
           alert('微信登陆失败, 请退出重新尝试');
         }
