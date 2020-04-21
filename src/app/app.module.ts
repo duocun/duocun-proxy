@@ -9,12 +9,8 @@ import { LogService } from './log.service';
 import { AuthComponent } from './auth/auth.component';
 
 const routes = [
-  { path: '', redirectTo: 'proxy', pathMatch: 'full' },
-  { path: 'proxy', component: AuthComponent}
-  // {
-  //     path: '**',
-  //     component: AppComponent,
-  // }
+  // { path: '', redirectTo: 'proxy', pathMatch: 'full' },
+  { path: '', component: AuthComponent},
 ];
 @NgModule({
   declarations: [
