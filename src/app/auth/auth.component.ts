@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 import { LogService, LogEventWhiteScreenType } from '../log.service';
 import { Subject } from 'rxjs';
 
-import {takeUntil} from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 
 // import { factory } from './log4j';
 // const log = factory.getLogger('model.AppComponent');
@@ -48,11 +48,11 @@ export class AuthComponent implements OnInit, OnDestroy {
       'https://duocun.ca/grocery?token=' + tokenId + '&state=123'; //  + appCode;
     // });
   }
-  setTimer(tokenInfo:string) {
-    if ( !this.timerHandler ) {
+  setTimer(tokenInfo: string) {
+    if (!this.timerHandler) {
       // if auth time is greater than 10 seconds,
       // try to tell clients to login again
-      this.timerHandler = setTimeout( ()=> {
+      this.timerHandler = setTimeout(() => {
         this.logSvc.saveWhiteScreenLog(`Proxy: auth more than 10 seconds ${tokenInfo}`, LogEventWhiteScreenType.Exception);
         this.authTimeTooLong = true;
         this.clearTimer();
@@ -60,7 +60,7 @@ export class AuthComponent implements OnInit, OnDestroy {
     }
   }
   clearTimer() {
-    if ( this.timerHandler ) {
+    if (this.timerHandler) {
       clearTimeout(this.timerHandler);
       this.timerHandler = null;
     }
@@ -88,12 +88,12 @@ export class AuthComponent implements OnInit, OnDestroy {
         whiteScreenLog += "->Map Done";
         const code = queryParams.get('code');
         const appCode = queryParams.get('state'); // no use at all
-        this.setTimer(`(${code},${appCode})`); 
-        whiteScreenLog+= `(${code},${appCode})`;
+        this.setTimer(`(${code},${appCode})`);
+        whiteScreenLog += `(${code},${appCode})`;
         // process wx 40163 issue
         const { accessToken, openId } = this.authSvc.getWechatOpenId();
         if (accessToken && openId) {
-          whiteScreenLog+= "->Have local accessToken"
+          whiteScreenLog += "->Have local accessToken"
           this.authSvc
             .wechatLoginByOpenId(accessToken, openId)
             .pipe(takeUntil(this.onDestroy$))
@@ -104,24 +104,34 @@ export class AuthComponent implements OnInit, OnDestroy {
                 this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Success);
                 this.redirectApp(appCode, r.tokenId);
               } else {
-                whiteScreenLog += `->WeChat login fail ${r}`;
-                this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Failure);
-                this.clearTimer();
-                // accessToken expiry
-                alert('微信登陆失败，请退出公众号重新尝试');
-                return;
+                // add another try to increase chance to login
+                this.authSvc.getCurrentAccount()
+                  .pipe(takeUntil(this.onDestroy$))
+                  .subscribe((account: any) => {
+                    if (account) {
+                      const tokenId = this.authSvc.getAccessTokenId();
+                      this.redirectApp(appCode, tokenId);
+                    } else {
+                      whiteScreenLog += `->WeChat login fail ${r}`;
+                      this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Failure);
+                      this.clearTimer();
+                      // accessToken expiry
+                      alert('微信登陆失败，请退出公众号重新尝试');
+                      return;
+                    }
+                  });
               }
             }, error => {
-              whiteScreenLog+= `->wechatLoginByOpenId subscribe error : ${error}`;
+              whiteScreenLog += `->wechatLoginByOpenId subscribe error : ${error}`;
               this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Exception);
             });
         } else {
-          whiteScreenLog+= "->No local accessToken"
+          whiteScreenLog += "->No local accessToken";
           // if accessToken expired
           this.wechatLoginByCode(appCode, code, whiteScreenLog);
         }
       }, error => {
-        whiteScreenLog+= `->Map subscribe error : ${error}`;
+        whiteScreenLog += `->Map subscribe error : ${error}`;
         this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Exception);
       });
   }
@@ -151,9 +161,18 @@ export class AuthComponent implements OnInit, OnDestroy {
           this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Exception);
         });
     } else {
-      // we log this as exception 
-      whiteScreenLog += "->Param error";
-      this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Exception);
+      // add another try to increase chance to login
+      this.authSvc.getCurrentAccount()
+        .pipe(takeUntil(this.onDestroy$))
+        .subscribe((account: any) => {
+          if (account) {
+            const tokenId = this.authSvc.getAccessTokenId();
+            this.redirectApp(appCode, tokenId);
+          } else {
+            whiteScreenLog += "->Param error";
+            this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Exception);
+          }
+        });
     }
   }
 }

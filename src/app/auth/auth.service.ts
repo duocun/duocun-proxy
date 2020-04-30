@@ -82,9 +82,9 @@ export class AuthService {
     return tokenId ? tokenId : null;
   }
 
-  getAccount() {
+  getCurrentAccount() {
     const tokenId: string = this.getAccessTokenId();
-    if (tokenId) {
+    if (tokenId  && tokenId !== 'null') {
       return this.http.get(this.url + '/current?tokenId=' + tokenId);
     } else {
       return of(null);
