@@ -12,6 +12,7 @@ import { takeUntil } from 'rxjs/operators';
 const AppCode = {
   FOOD_DELIVERY: '122',
   GROCERY: '123',
+  MALL: '124'
 };
 
 @Component({
@@ -36,16 +37,19 @@ export class AuthComponent implements OnInit, OnDestroy {
   redirectApp(appCode, tokenId) {
     // const data = {msg: 'appCode: ' + appCode + ', https://duocun.ca?grocerytoken=' + tokenId, category: 'proxy' };
     // this.logSvc.save(data).then(() => {
-    // if (appCode === AppCode.FOOD_DELIVERY) {
-    //   window.location.href = 'https://duocun.ca/fod?token=' + tokenId + '&state=' + appCode;
-    // } else if (appCode === AppCode.GROCERY) {
-    //   window.location.href = 'https://duocun.ca/grocery?token=' + tokenId + '&state=' + appCode;
-    // } else {
-    //   window.location.href = 'https://duocun.ca';
-    // }
     this.clearTimer();
-    window.location.href =
-      'https://duocun.ca/grocery?token=' + tokenId + '&state=123'; //  + appCode;
+    if (appCode === AppCode.MALL) {
+      window.location.href = 'https://duocun.ca/mall?token=' + tokenId + '&state=' + appCode;
+    } else if (appCode === AppCode.GROCERY) {
+      window.location.href = 'https://duocun.ca/grocery?token=' + tokenId + '&state=' + appCode;
+    } else if (appCode === AppCode.FOOD_DELIVERY) {
+      window.location.href = 'https://duocun.ca/fod?token=' + tokenId + '&state=' + appCode;
+    } else {
+      alert('获取状态码失败, 请退出重新登陆');
+    }
+
+    // window.location.href =
+    //   'https://duocun.ca/grocery?token=' + tokenId + '&state=123'; //  + appCode;
     // });
   }
   setTimer(tokenInfo: string) {
@@ -56,7 +60,7 @@ export class AuthComponent implements OnInit, OnDestroy {
         this.logSvc.saveWhiteScreenLog(`Proxy: auth more than 10 seconds ${tokenInfo}`, LogEventWhiteScreenType.Exception);
         this.authTimeTooLong = true;
         this.clearTimer();
-      }, 10000)
+      }, 10000);
     }
   }
   clearTimer() {
@@ -77,7 +81,7 @@ export class AuthComponent implements OnInit, OnDestroy {
   // production: http://duocun.com.cn/?code=071uZnPi1xT97t0OFnTi12xDPi1uZnPK&state=123
   ngOnInit() {
     // set a timer, if auth takes too long, then tell users to login again
-    let whiteScreenLog = "Proxy OnInit";
+    let whiteScreenLog = 'Proxy OnInit';
     // console.log('ngOnInit');
     // log.debug(`ngOnInit called ....`);
     this.route.queryParamMap
@@ -85,22 +89,25 @@ export class AuthComponent implements OnInit, OnDestroy {
         takeUntil(this.onDestroy$)
       )
       .subscribe((queryParams) => {
-        whiteScreenLog += "->Map Done";
+        whiteScreenLog += ', route Done';
+
         const code = queryParams.get('code');
         const appCode = queryParams.get('state'); // no use at all
         this.setTimer(`(${code},${appCode})`);
         whiteScreenLog += `(${code},${appCode})`;
+
         // process wx 40163 issue
         const { accessToken, openId } = this.authSvc.getWechatOpenId();
         if (accessToken && openId) {
-          whiteScreenLog += "->Have local accessToken"
+          whiteScreenLog += ', use local accessToken';
+
           this.authSvc
             .wechatLoginByOpenId(accessToken, openId)
             .pipe(takeUntil(this.onDestroy$))
             .subscribe((r: any) => {
               if (r && r.tokenId) {
                 this.authSvc.setAccessTokenId(r.tokenId);
-                whiteScreenLog += `->WeChat login ok, redirect`;
+                whiteScreenLog += `, use openId ok, redirect`;
                 this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Success);
                 this.redirectApp(appCode, r.tokenId);
               } else {
@@ -112,7 +119,7 @@ export class AuthComponent implements OnInit, OnDestroy {
                       const tokenId = this.authSvc.getAccessTokenId();
                       this.redirectApp(appCode, tokenId);
                     } else {
-                      whiteScreenLog += `->WeChat login fail ${r}`;
+                      whiteScreenLog += `, use local token fail ${r}`;
                       this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Failure);
                       this.clearTimer();
                       // accessToken expiry
@@ -126,12 +133,12 @@ export class AuthComponent implements OnInit, OnDestroy {
               this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Exception);
             });
         } else {
-          whiteScreenLog += "->No local accessToken";
+          whiteScreenLog += ', No local accessToken';
           // if accessToken expired
           this.wechatLoginByCode(appCode, code, whiteScreenLog);
         }
       }, error => {
-        whiteScreenLog += `->Map subscribe error : ${error}`;
+        whiteScreenLog += `, route subscribe error : ${error}`;
         this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Exception);
       });
   }
@@ -147,11 +154,11 @@ export class AuthComponent implements OnInit, OnDestroy {
           if (r && r.tokenId) {
             this.authSvc.setWechatOpenId(r.accessToken, r.openId, r.expiresIn);
             this.authSvc.setAccessTokenId(r.tokenId); // duocun jwt token
-            whiteScreenLog += `->WeChat login ok, redirect`;
+            whiteScreenLog += `wechat code login ok, redirect`;
             this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Success);
             this.redirectApp(appCode, r.tokenId); // duocun jwt token
           } else {
-            whiteScreenLog += `->WeChat login fail ${r}`;
+            whiteScreenLog += `, wechat code login fail ${r}`;
             this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Failure);
             this.clearTimer();
             alert('微信登陆失败, 请退出重新尝试');
@@ -169,7 +176,7 @@ export class AuthComponent implements OnInit, OnDestroy {
             const tokenId = this.authSvc.getAccessTokenId();
             this.redirectApp(appCode, tokenId);
           } else {
-            whiteScreenLog += "->Param error";
+            whiteScreenLog += ', wrong local token';
             this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Exception);
           }
         });
