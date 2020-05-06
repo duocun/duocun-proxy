@@ -37,7 +37,7 @@ export class AuthComponent implements OnInit, OnDestroy {
   redirectApp(appCode, tokenId) {
     // const data = {msg: 'appCode: ' + appCode + ', https://duocun.ca?grocerytoken=' + tokenId, category: 'proxy' };
     // this.logSvc.save(data).then(() => {
-    this.clearTimer();
+    // this.clearTimer();
     if (appCode === AppCode.MALL) {
       window.location.href = 'https://duocun.ca/mall?token=' + tokenId + '&state=' + appCode;
     } else if (appCode === AppCode.GROCERY) {
@@ -52,10 +52,10 @@ export class AuthComponent implements OnInit, OnDestroy {
     //   'https://duocun.ca/grocery?token=' + tokenId + '&state=123'; //  + appCode;
     // });
   }
+
   setTimer(tokenInfo: string) {
     if (!this.timerHandler) {
-      // if auth time is greater than 10 seconds,
-      // try to tell clients to login again
+      // if auth time is greater than 10 seconds, try to tell clients to login again
       this.timerHandler = setTimeout(() => {
         this.logSvc.saveWhiteScreenLog(`Proxy: auth more than 10 seconds ${tokenInfo}`, LogEventWhiteScreenType.Exception);
         this.authTimeTooLong = true;
@@ -63,6 +63,7 @@ export class AuthComponent implements OnInit, OnDestroy {
       }, 10000);
     }
   }
+
   clearTimer() {
     if (this.timerHandler) {
       clearTimeout(this.timerHandler);
@@ -71,7 +72,7 @@ export class AuthComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.clearTimer();
+    // this.clearTimer();
     this.onDestroy$.next();
     this.onDestroy$.complete();
   }
@@ -81,105 +82,94 @@ export class AuthComponent implements OnInit, OnDestroy {
   // production: http://duocun.com.cn/?code=071uZnPi1xT97t0OFnTi12xDPi1uZnPK&state=123
   ngOnInit() {
     // set a timer, if auth takes too long, then tell users to login again
-    let whiteScreenLog = 'Proxy OnInit';
+    let sLog = '';
     // console.log('ngOnInit');
     // log.debug(`ngOnInit called ....`);
     this.route.queryParamMap
-      .pipe(
-        takeUntil(this.onDestroy$)
-      )
+      .pipe(takeUntil(this.onDestroy$))
       .subscribe((queryParams) => {
-        whiteScreenLog += ', route Done';
+        sLog += 'proxy route ok, ';
 
         const code = queryParams.get('code');
         const appCode = queryParams.get('state'); // no use at all
-        this.setTimer(`(${code},${appCode})`);
-        whiteScreenLog += `(${code},${appCode})`;
+        sLog += `(${code},${appCode})`;
 
-        // process wx 40163 issue
-        const { accessToken, openId } = this.authSvc.getWechatOpenId();
-        if (accessToken && openId) {
-          whiteScreenLog += ', use local accessToken';
-
-          this.authSvc
-            .wechatLoginByOpenId(accessToken, openId)
-            .pipe(takeUntil(this.onDestroy$))
-            .subscribe((r: any) => {
-              if (r && r.tokenId) {
-                this.authSvc.setAccessTokenId(r.tokenId);
-                whiteScreenLog += `, use openId ok, redirect`;
-                this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Success);
-                this.redirectApp(appCode, r.tokenId);
-              } else {
-                // add another try to increase chance to login
-                this.authSvc.getCurrentAccount()
-                  .pipe(takeUntil(this.onDestroy$))
-                  .subscribe((account: any) => {
-                    if (account) {
-                      const tokenId = this.authSvc.getAccessTokenId();
-                      this.redirectApp(appCode, tokenId);
-                    } else {
-                      whiteScreenLog += `, use local token fail ${r}`;
-                      this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Failure);
-                      this.clearTimer();
-                      // accessToken expiry
-                      alert('微信登陆失败，请退出公众号重新尝试');
-                      return;
-                    }
-                  });
-              }
-            }, error => {
-              whiteScreenLog += `->wechatLoginByOpenId subscribe error : ${error}`;
-              this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Exception);
-            });
+        if (appCode && code) {
+          this.authSvc.wechatLoginByCode(code)
+          .pipe(takeUntil(this.onDestroy$))
+          .subscribe((r: any) => {
+            if (r && r.tokenId) {
+              this.authSvc.setWechatOpenId(r.accessToken, r.openId, '7190'); // r.expiresIn);
+              this.authSvc.setAccessTokenId(r.tokenId); // duocun jwt token
+              sLog += `wechat code login ok, redirect`;
+              this.logSvc.saveWhiteScreenLog(sLog, LogEventWhiteScreenType.Success);
+              this.redirectApp(appCode, r.tokenId); // duocun jwt token
+            } else {
+              sLog += `wechat code login fail ${r}, `;
+              this.tryAnotherLogin(appCode, sLog);
+            }
+          }, error => {
+            sLog += `->wechatLoginByCode subscribe exception ${error}`;
+            this.tryAnotherLogin(appCode, sLog);
+          });
         } else {
-          whiteScreenLog += ', No local accessToken ';
-          // if accessToken expired
-          this.wechatLoginByCode(appCode, code, whiteScreenLog);
+          // add another try to increase chance to login
+          sLog += 'missing code, ';
+          this.tryAnotherLogin(appCode, sLog);
         }
       }, error => {
-        whiteScreenLog += `, route subscribe error : ${error}`;
-        this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Exception);
+        sLog += `, route subscribe error : ${error}`;
+        this.logSvc.saveWhiteScreenLog(sLog, LogEventWhiteScreenType.Exception);
+        alert('微信登陆失败，请退出公众号重新尝试');
       });
   }
 
-  wechatLoginByCode(appCode, code, whiteScreenLog) {
-    if (appCode && code) {
-      this.authSvc
-        .wechatLoginByCode(code)
+
+  tryAnotherLogin(appCode, sLog) {
+    // try local saved accessToken and openId
+    const { accessToken, openId } = this.authSvc.getWechatOpenId();
+    if (accessToken && openId) {
+      sLog += 'use local openId, ';
+
+      this.authSvc.wechatLoginByOpenId(accessToken, openId)
         .pipe(takeUntil(this.onDestroy$))
-        .subscribe((r: any) => {
-          // const data = {msg: 'wxLogin with code:' + code + ', appCode: ' + appCode + ', tokenId:' + r.tokenId};
-          // this.logSvc.save(data).then(() => {
-          if (r && r.tokenId) {
-            this.authSvc.setWechatOpenId(r.accessToken, r.openId, '7190'); // r.expiresIn);
-            this.authSvc.setAccessTokenId(r.tokenId); // duocun jwt token
-            whiteScreenLog += `wechat code login ok, redirect`;
-            this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Success);
-            this.redirectApp(appCode, r.tokenId); // duocun jwt token
-          } else {
-            whiteScreenLog += `, wechat code login fail ${r}`;
-            this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Failure);
-            this.clearTimer();
-            alert('微信登陆失败, 请退出重新尝试');
-          }
-        }, error => {
-          whiteScreenLog += `->wechatLoginByCode subscribe err ${error}`;
-          this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Exception);
-        });
-    } else {
-      // add another try to increase chance to login
-      this.authSvc.getCurrentAccount()
-        .pipe(takeUntil(this.onDestroy$))
-        .subscribe((account: any) => {
-          if (account) {
-            const tokenId = this.authSvc.getAccessTokenId();
+        .subscribe((r1: any) => {
+          if (r1 && r1.tokenId) {
+            const tokenId = r1.tokenId;
+            this.authSvc.setAccessTokenId(tokenId);
+            sLog += `use openId ok, redirect, `;
+            this.logSvc.saveWhiteScreenLog(sLog, LogEventWhiteScreenType.Success);
             this.redirectApp(appCode, tokenId);
           } else {
-            whiteScreenLog += ', wrong local token';
-            this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Exception);
+            this.tokenLogin(appCode, sLog);
           }
+        }, error => {
+          sLog += `wechatLoginByOpenId subscribe exception: ${error}, `;
+          this.tokenLogin(appCode, sLog);
         });
+    } else {
+      sLog += 'no local openId, ';
+      this.tokenLogin(appCode, sLog);
     }
   }
+
+
+  tokenLogin(appCode, sLog) {
+    // add another try to increase chance to login
+    this.authSvc.getCurrentAccount()
+      .pipe(takeUntil(this.onDestroy$))
+      .subscribe((account: any) => {
+        if (account) {
+          const tokenId = this.authSvc.getAccessTokenId();
+          this.redirectApp(appCode, tokenId);
+          this.logSvc.saveWhiteScreenLog(sLog, LogEventWhiteScreenType.Success);
+        } else {
+          sLog += `, use local token fail`;
+          this.logSvc.saveWhiteScreenLog(sLog, LogEventWhiteScreenType.Failure);
+          alert('微信登陆失败，请退出公众号重新尝试');
+          return;
+        }
+    });
+  }
+
 }

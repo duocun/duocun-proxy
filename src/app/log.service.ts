@@ -5,9 +5,9 @@ import { environment } from '../environments/environment';
 import { AuthService } from './auth/auth.service';
 
 export enum LogEventWhiteScreenType {
-  Success = "WhiteScreen Success",
-  Failure = "WhiteScreen Failure",
-  Exception = "WhiteScreen Exception",
+  Success = "ws Success",
+  Failure = "ws Failure",
+  Exception = "ws Exception",
 } 
 
 @Injectable({

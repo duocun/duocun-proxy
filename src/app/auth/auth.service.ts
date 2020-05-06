@@ -61,17 +61,11 @@ export class AuthService {
 
   setWechatOpenId(accessToken: string, openId: string, expiresIn: string) {
     if (accessToken && openId && expiresIn) {
-
-      const accessTokenSaved = window.localStorage.getItem(WECHAT_ACCESS_TOKEN_KEY);
-      const openIdSaved = window.localStorage.getItem(WECHAT_OPENID_KEY);
-
-      if (accessToken !== accessTokenSaved && openId !== openIdSaved) {
-        const seconds = (+expiresIn);
-        const t = new Date().getTime() + seconds * 1000;
-        window.localStorage.setItem(WECHAT_OPENID_KEY, openId);
-        window.localStorage.setItem(WECHAT_ACCESS_TOKEN_KEY, accessToken);
-        window.localStorage.setItem(WECHAT_EXPIRY_KEY, t.toString());
-      }
+      const seconds = (+expiresIn);
+      const t = new Date().getTime() + seconds * 1000;
+      window.localStorage.setItem(WECHAT_OPENID_KEY, openId);
+      window.localStorage.setItem(WECHAT_ACCESS_TOKEN_KEY, accessToken);
+      window.localStorage.setItem(WECHAT_EXPIRY_KEY, t.toString());
     }
   }
 
@@ -81,7 +75,7 @@ export class AuthService {
     const t = +window.localStorage.getItem(WECHAT_EXPIRY_KEY);
 
     if (accessToken && openId) {
-      const expiry = new Date().setTime(+(t));
+      const expiry = +t;
       const now = new Date().getTime();
       if (accessToken && openId && (now < expiry)) {
         return { accessToken, openId };
