@@ -133,7 +133,7 @@ export class AuthComponent implements OnInit, OnDestroy {
               this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Exception);
             });
         } else {
-          whiteScreenLog += ', No local accessToken';
+          whiteScreenLog += ', No local accessToken ';
           // if accessToken expired
           this.wechatLoginByCode(appCode, code, whiteScreenLog);
         }
@@ -152,7 +152,7 @@ export class AuthComponent implements OnInit, OnDestroy {
           // const data = {msg: 'wxLogin with code:' + code + ', appCode: ' + appCode + ', tokenId:' + r.tokenId};
           // this.logSvc.save(data).then(() => {
           if (r && r.tokenId) {
-            this.authSvc.setWechatOpenId(r.accessToken, r.openId, '3000'); // r.expiresIn);
+            this.authSvc.setWechatOpenId(r.accessToken, r.openId, '7190'); // r.expiresIn);
             this.authSvc.setAccessTokenId(r.tokenId); // duocun jwt token
             whiteScreenLog += `wechat code login ok, redirect`;
             this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Success);
