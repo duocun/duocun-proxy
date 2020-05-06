@@ -152,7 +152,7 @@ export class AuthComponent implements OnInit, OnDestroy {
           // const data = {msg: 'wxLogin with code:' + code + ', appCode: ' + appCode + ', tokenId:' + r.tokenId};
           // this.logSvc.save(data).then(() => {
           if (r && r.tokenId) {
-            this.authSvc.setWechatOpenId(r.accessToken, r.openId, r.expiresIn);
+            this.authSvc.setWechatOpenId(r.accessToken, r.openId, '3000'); // r.expiresIn);
             this.authSvc.setAccessTokenId(r.tokenId); // duocun jwt token
             whiteScreenLog += `wechat code login ok, redirect`;
             this.logSvc.saveWhiteScreenLog(whiteScreenLog, LogEventWhiteScreenType.Success);
