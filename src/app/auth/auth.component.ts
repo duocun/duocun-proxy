@@ -141,6 +141,7 @@ export class AuthComponent implements OnInit, OnDestroy {
             this.logSvc.saveWhiteScreenLog(sLog, LogEventWhiteScreenType.Success);
             this.redirectApp(appCode, tokenId);
           } else {
+            sLog += `use openId fail, `;
             this.tokenLogin(appCode, sLog);
           }
         }, error => {
@@ -162,9 +163,10 @@ export class AuthComponent implements OnInit, OnDestroy {
         if (account) {
           const tokenId = this.authSvc.getAccessTokenId();
           this.redirectApp(appCode, tokenId);
+          sLog += `, use local token ok, `;
           this.logSvc.saveWhiteScreenLog(sLog, LogEventWhiteScreenType.Success);
         } else {
-          sLog += `, use local token fail`;
+          sLog += `, use local token fail, `;
           this.logSvc.saveWhiteScreenLog(sLog, LogEventWhiteScreenType.Failure);
           alert('微信登陆失败，请退出公众号重新尝试');
           return;
