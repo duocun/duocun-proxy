@@ -39,7 +39,7 @@ export class AuthComponent implements OnInit, OnDestroy {
     // this.logSvc.save(data).then(() => {
     // this.clearTimer();
     if (appCode === AppCode.MALL) {
-      window.location.href = 'https://duocun.ca/mall?token=' + tokenId + '&state=' + appCode;
+      window.location.href = 'https://duocun.ca?token=' + tokenId + '&state=' + appCode;
     } else if (appCode === AppCode.GROCERY) {
       window.location.href = 'https://duocun.ca/grocery?token=' + tokenId + '&state=' + appCode;
     } else if (appCode === AppCode.FOOD_DELIVERY) {
@@ -92,7 +92,7 @@ export class AuthComponent implements OnInit, OnDestroy {
 
         const code = queryParams.get('code');
         const appCode = queryParams.get('state'); // no use at all
-        sLog += `(${code},${appCode})`;
+        sLog += `(${code},${appCode}), `;
 
         if (appCode && code) {
           this.authSvc.wechatLoginByCode(code)
