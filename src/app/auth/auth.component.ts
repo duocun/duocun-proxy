@@ -47,7 +47,7 @@ export class AuthComponent implements OnInit, OnDestroy {
     //   window.location.href = 'https://duocun.ca';
     // }
     window.location.href =
-      'https://duocun.ca/grocery?token=' + tokenId + '&state=123'; //  + appCode;
+      'https://duocun.ca/?token=' + tokenId + '&state=123'; //  + appCode;
     // });
   }
 
