@@ -22,7 +22,7 @@ export class LogService {
     headers = headers.append('Content-Type', 'application/json');
     const accessTokenId = this.authSvc.getAccessTokenId();
     if (accessTokenId) {
-      headers = headers.append('Authorization', '' + accessTokenId);
+      headers = headers.append('Authorization', 'Bearer ' + accessTokenId);
     }
 
     if (filter) {
