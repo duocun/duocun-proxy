@@ -11,6 +11,9 @@ const WECHAT_OPENID_KEY = 'duocun_wechat_openId';
 const WECHAT_ACCESS_TOKEN_KEY = 'duocun_wechat_access_token';
 const WECHAT_EXPIRY_KEY = 'duocun_wechat_expiry';
 
+const WX_AUTH_SVC_HOST = environment.WX_AUTH_SVC_HOST;
+const WX_AUTH_SVC_PATH = environment.WX_AUTH_SVC_PATH;
+
 @Injectable({
   providedIn: 'root'
 })
@@ -117,4 +120,19 @@ export class AuthService {
     return this.http.post(url, { accessToken, openId });
   }
 
+
+  getWechatUserByAuthCode(authCode) {
+    const url = `http://${WX_AUTH_SVC_HOST}/${WX_AUTH_SVC_PATH}/userInfoByAuthCode?code=${authCode}`;
+    return this.http.get(url);
+  }
+
+  getWechatUserByOpenId(accessToken, openId) {
+    const url = `http://${WX_AUTH_SVC_HOST}/${WX_AUTH_SVC_PATH}/userInfoByOpenId?accessToken=${accessToken}&openId=${openId}`;
+    return this.http.get(url);
+  }
+
+  wechatSignup(data) {
+    const url = `${this.url}/wechatSignup`;
+    return this.http.post(this.url, {...data});
+  }
 }

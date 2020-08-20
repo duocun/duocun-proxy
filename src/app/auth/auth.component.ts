@@ -12,7 +12,8 @@ import { takeUntil } from 'rxjs/operators';
 const AppCode = {
   FOOD_DELIVERY: '122',
   GROCERY: '123',
-  MALL: '124'
+  MALL: '124',
+  DEV: '125'
 };
 
 @Component({
@@ -42,6 +43,8 @@ export class AuthComponent implements OnInit, OnDestroy {
       window.location.href = tokenId ? `https://duocun.ca/test?token=${tokenId}&state=${appCode}` : `https://duocun.ca/test?state=${appCode}`;
     } else if (appCode === AppCode.FOOD_DELIVERY) {
       window.location.href = tokenId ? `https://duocun.ca/fod?token=${tokenId}&state=${appCode}` : `https://duocun.ca/fod?state=${appCode}`;
+    } else if (appCode === AppCode.DEV) {
+      window.location.href = tokenId ? `https://dev.duocun.ca?token=${tokenId}&state=${appCode}` : `https://dev.duocun.ca?state=${appCode}`;
     } else {
       window.location.href = tokenId ? `https://duocun.ca?token=${tokenId}&state=${appCode}` : `https://duocun.ca?state=${appCode}`;
     }
@@ -73,7 +76,7 @@ export class AuthComponent implements OnInit, OnDestroy {
   }
 
   // duocun-proxy domain is localhost:5005   the router url could be call multiple times
-  // dev:        http://localhost:5005/?code=071uZnPi1xT97t0OFnTi12xDPi1uZnPK&state=123
+  // dev:        http://localhost:5005/?code=071L22000Liq8K15WF200PKg9d4L2205&state=123
   // production: http://duocun.com.cn/?code=071uZnPi1xT97t0OFnTi12xDPi1uZnPK&state=123
   ngOnInit() {
     // set a timer, if auth takes too long, then tell users to login again
@@ -86,25 +89,54 @@ export class AuthComponent implements OnInit, OnDestroy {
         const code = queryParams.get('code');
         const appCode = queryParams.get('state'); // no use at all
         sLog += `(${code}, ${appCode}), `;
-
-        if (appCode && code) {
+        if (appCode && appCode === '124' && code) {
           this.authSvc.wechatLoginByCode(code)
-          .pipe(takeUntil(this.onDestroy$))
-          .subscribe((r: any) => {
-            if (r && r.tokenId) {
-              this.authSvc.setWechatOpenId(r.accessToken, r.openId, '7190'); // r.expiresIn);
-              this.authSvc.setAccessTokenId(r.tokenId); // duocun jwt token
-              sLog += `wechat code login ok, redirect`;
-              this.logSvc.saveWhiteScreenLog(sLog, LogEventWhiteScreenType.Success);
-              this.redirectApp(appCode, r.tokenId); // duocun jwt token
-            } else {
-              sLog += `wechat code login fail ${r}, `;
+            .pipe(takeUntil(this.onDestroy$))
+            .subscribe((r: any) => {
+              if (r && r.tokenId) {
+                this.authSvc.setWechatOpenId(r.accessToken, r.openId, '7190'); // r.expiresIn);
+                this.authSvc.setAccessTokenId(r.tokenId); // duocun jwt token
+                sLog += `wechat code login ok, redirect`;
+                this.logSvc.saveWhiteScreenLog(sLog, LogEventWhiteScreenType.Success);
+                this.redirectApp(appCode, r.tokenId); // duocun jwt token
+              } else {
+                sLog += `wechat code login fail ${r}, `;
+                this.wechatLoginByOpenId(appCode, sLog);
+              }
+            }, error => {
+              sLog += `->wechatLoginByCode subscribe exception ${error}`;
               this.wechatLoginByOpenId(appCode, sLog);
+            });
+        } else if (appCode && appCode === '125' && code) { // for test
+          this.authSvc.getWechatUserByAuthCode(code).subscribe((rt: any) => {
+            if (rt && rt.openid) {
+              // try signup
+              this.authSvc.wechatSignup(rt).subscribe((r: any) => {
+                this.authSvc.setWechatOpenId(r.accessToken, r.openId, '7190'); // r.expiresIn);
+                this.authSvc.setAccessTokenId(r.tokenId); // duocun jwt token
+                sLog += `wechat code login ok, redirect`;
+                this.logSvc.saveWhiteScreenLog(sLog, LogEventWhiteScreenType.Success);
+                this.redirectApp(appCode, r.tokenId); // duocun jwt token
+              });
+            } else {
+              // get openId from cache and try signup again
+              const { accessToken, openId } = this.authSvc.getWechatOpenId();
+              if (openId) {
+                this.authSvc.getWechatUserByOpenId(accessToken, openId).subscribe((r1: any) => {
+                  this.authSvc.wechatSignup(r1).subscribe((r: any) => {
+                    this.authSvc.setWechatOpenId(r.accessToken, r.openId, '7190'); // r.expiresIn);
+                    this.authSvc.setAccessTokenId(r.tokenId); // duocun jwt token
+                    sLog += `wechat code login ok, redirect`;
+                    this.logSvc.saveWhiteScreenLog(sLog, LogEventWhiteScreenType.Success);
+                    this.redirectApp(appCode, r.tokenId); // duocun jwt token
+                  });
+                });
+              } else {
+                this.redirectApp(appCode, null); // duocun jwt token
+              }
             }
-          }, error => {
-            sLog += `->wechatLoginByCode subscribe exception ${error}`;
-            this.wechatLoginByOpenId(appCode, sLog);
           });
+          // getWechatUserByOpenId(accessToken, openId) {
         } else {
           // add another try to increase chance to login
           sLog += 'missing code, ';

@@ -8,5 +8,8 @@ export const environment = {
   APP_URL: window.location.origin,
   MEDIA_URL: window.location.origin + '/media/',
   AUTH_PREFIX: '',
-  language: 'zh'
+  language: 'zh',
+
+  WX_AUTH_SVC_HOST: 'api.duocun.ca',
+  WX_AUTH_SVC_PATH: 'wx'
 };
