@@ -6,6 +6,7 @@ import { Subject } from 'rxjs';
 
 import { takeUntil } from 'rxjs/operators';
 
+import { environment } from '../../environments/environment';
 // import { factory } from './log4j';
 // const log = factory.getLogger('model.AppComponent');
 
@@ -108,7 +109,14 @@ export class AuthComponent implements OnInit, OnDestroy {
               this.wechatLoginByOpenId(appCode, sLog);
             });
         } else if (appCode && appCode === '125' && code) { // for test
+          const WX_AUTH_SVC_HOST = environment.WX_AUTH_SVC_HOST;
+          const WX_AUTH_SVC_PATH = environment.WX_AUTH_SVC_PATH;
+          this.logSvc.saveV2('getWechatUserByAuthCode start').subscribe(() => {});
+          const url = `https://${WX_AUTH_SVC_HOST}/${WX_AUTH_SVC_PATH}/userInfoByAuthCode?code=${code}`;
+          this.logSvc.saveV2(url).subscribe(() => {});
+
           this.authSvc.getWechatUserByAuthCode(code).subscribe((rt: any) => {
+            this.logSvc.saveV2('getWechatUserByAuthCode return:' + JSON.stringify(rt)).subscribe(() => {});
             if (rt && rt.openid) {
               // try signup
               this.authSvc.wechatSignup(rt).subscribe((r: any) => {

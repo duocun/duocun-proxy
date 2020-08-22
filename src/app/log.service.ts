@@ -28,6 +28,11 @@ export class LogService {
     this.url = environment.API_URL + 'EventLogs';
   }
 
+  saveV2(txt) {
+    const data = { msg: txt };
+    const url = environment.LOG_SVC;
+    return this.http.post(url, data);
+  }
 
   doPost(url: string, entity: any, filter?: any): Observable<any> {
     let headers: HttpHeaders = new HttpHeaders();
@@ -47,6 +52,7 @@ export class LogService {
   save(data) {
     return this.doPost(this.url, data).toPromise();
   }
+
   saveWhiteScreenLog( message: string, whiteScreenEventType: LogEventWhiteScreenType ){
     const data = {
       message: message,
