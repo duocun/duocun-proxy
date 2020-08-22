@@ -15,6 +15,7 @@ export const environment = {
   AUTH_PREFIX: '',
   language: 'zh',
 
-  WX_AUTH_SVC_HOST: 'localhost:8004',
-  WX_AUTH_SVC_PATH: 'wx'
+  WX_AUTH_SVC_HOST: 'duocun.com.cn', // 'localhost:8004',
+  WX_AUTH_SVC_PATH: 'wx',
+  LOG_SVC: 'https://api.duocun.ca/log/'
 };

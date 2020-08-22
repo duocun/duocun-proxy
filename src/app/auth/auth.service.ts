@@ -122,12 +122,12 @@ export class AuthService {
 
 
   getWechatUserByAuthCode(authCode) {
-    const url = `http://${WX_AUTH_SVC_HOST}/${WX_AUTH_SVC_PATH}/userInfoByAuthCode?code=${authCode}`;
+    const url = `https://${WX_AUTH_SVC_HOST}/${WX_AUTH_SVC_PATH}/userInfoByAuthCode?code=${authCode}`;
     return this.http.get(url);
   }
 
   getWechatUserByOpenId(accessToken, openId) {
-    const url = `http://${WX_AUTH_SVC_HOST}/${WX_AUTH_SVC_PATH}/userInfoByOpenId?accessToken=${accessToken}&openId=${openId}`;
+    const url = `https://${WX_AUTH_SVC_HOST}/${WX_AUTH_SVC_PATH}/userInfoByOpenId?accessToken=${accessToken}&openId=${openId}`;
     return this.http.get(url);
   }
 
