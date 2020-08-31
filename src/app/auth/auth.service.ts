@@ -4,6 +4,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { throwError as observableThrowError, of } from 'rxjs';
 
 import { environment } from '../../environments/environment';
+
 const COOKIE_EXPIRY_DAYS = 3;
 
 const WECHAT_CODE_KEY = 'duocun_wechat_code';
@@ -20,7 +21,7 @@ const WX_AUTH_SVC_PATH = environment.WX_AUTH_SVC_PATH;
 export class AuthService {
   public url = environment.API_URL + 'Accounts';
   constructor(
-    private http: HttpClient
+    private http: HttpClient,
   ) {
 
   }
@@ -133,6 +134,6 @@ export class AuthService {
 
   wechatSignup(data) {
     const url = `${this.url}/wechatSignup`;
-    return this.http.post(this.url, {...data});
+    return this.http.post(url, {...data});
   }
 }
